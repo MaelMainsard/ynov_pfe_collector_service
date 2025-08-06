@@ -10,6 +10,21 @@ from loguru import logger
 db = get_database()
 load_dotenv()
 
+if not os.getenv('DB_NAME'):
+    logger.error("Missing DB_NAME environment variable")
+if not os.getenv('DB_HOST'):
+    logger.error("Missing DB_HOST environment variable")
+if not os.getenv('DB_PORT'):
+    logger.error("Missing DB_PORT environment variable")
+if not os.getenv('DB_USER'):
+    logger.error("Missing DB_USER environment variable")
+if not os.getenv('DB_PSW'):
+    logger.error("Missing DB_PSW environment variable")
+if not os.getenv('BRK_HOST'):
+    logger.error("Missing BRK_HOST environment variable")
+if not os.getenv('BRK_PORT'):
+    logger.error("Missing BRK_PORT environment variable")
+
 def get_station(station_id):
     count = Station.select().where(Station.id == station_id).count()
 
