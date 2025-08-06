@@ -51,7 +51,15 @@ if __name__ == '__main__':
     logger.info("Successfully connected to database")
     while True:
         logger.info("Waiting for stations datas.")
-        msg = subscribe.simple(topics="station/#", hostname=os.getenv('BRK_HOST'), port=int(os.getenv('BRK_PORT')))
+        msg = subscribe.simple(
+            topics="station/#",
+            hostname=os.getenv('BRK_HOST'),
+            port=int(os.getenv('BRK_PORT')),
+            auth={
+                'username': os.getenv('BRK_USER'),
+                'password': os.getenv('BRK_PSW')
+            }
+        )
 
         topic_parts = msg.topic.split('/')
         station_id = topic_parts[1] if len(topic_parts) > 1 else None
