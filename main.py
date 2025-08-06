@@ -12,18 +12,25 @@ load_dotenv()
 
 if not os.getenv('DB_NAME'):
     logger.error("Missing DB_NAME environment variable")
+    exit(1)
 if not os.getenv('DB_HOST'):
     logger.error("Missing DB_HOST environment variable")
+    exit(1)
 if not os.getenv('DB_PORT'):
     logger.error("Missing DB_PORT environment variable")
+    exit(1)
 if not os.getenv('DB_USER'):
     logger.error("Missing DB_USER environment variable")
+    exit(1)
 if not os.getenv('DB_PSW'):
     logger.error("Missing DB_PSW environment variable")
+    exit(1)
 if not os.getenv('BRK_HOST'):
     logger.error("Missing BRK_HOST environment variable")
+    exit(1)
 if not os.getenv('BRK_PORT'):
     logger.error("Missing BRK_PORT environment variable")
+    exit(1)
 
 def get_station(station_id):
     count = Station.select().where(Station.id == station_id).count()
