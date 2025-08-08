@@ -7,7 +7,7 @@ def test_payload_empty_string():
     assert check_payload_validity(b"") == False
 
 def test_payload_invalid_json():
-    assert check_payload_validity(b"This is not json") == True
+    assert check_payload_validity(b"This is not json") == False
 
 def test_payload_not_list():
     assert check_payload_validity(b'{"key": "value"}') == False
