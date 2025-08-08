@@ -1,7 +1,6 @@
 from models import Station, StationData
 from utils import get_database, check_payload_validity
 import os
-import json
 from dotenv import load_dotenv
 import paho.mqtt.subscribe as subscribe
 from datetime import datetime
@@ -54,29 +53,36 @@ try :
         # Reception d'un nouveau message
         #--------------------------------------------------
         logger.info(f"New message received from station {station_id}")
-        station = Station.get_or_create(id=station_id)
 
         # --------------------------------------------------
         # Récupération de la payload
         # --------------------------------------------------
-        if check_payload_validity(msg.payload) and os.getenv('ENV') == station.env:
+        valid, env, data, error = check_payload_validity(msg.payload)
 
-            data_array = json.loads(msg.payload.decode('utf-8').replace("'", '"'))
+        if valid:
+            if env == os.getenv('ENV'):
+                logger.info(f"Saving station if not exist.")
+                station = Station.get_or_create(id=station_id)
+                # --------------------------------------------------
+                # Enregistrement des métriques en bases
+                # --------------------------------------------------
+                logger.info(f"Saving station data.")
+                for item in data:
+                    measured_datetime = datetime.fromtimestamp(item['timestamp'])
 
-            # --------------------------------------------------
-            # Enregistrement des métriques en bases
-            # --------------------------------------------------
-            for data in data_array:
-                measured_datetime = datetime.fromtimestamp(data['timestamp'])
-
-                StationData.create(
-                    station_id=station_id,
-                    air_temperature=data['air_temperature'],
-                    relative_humidity=data['relative_humidity'],
-                    rainfall=data['rainfall'],
-                    leaf_wetness_duration=data['leaf_wetness_duration'],
-                    measured_at=measured_datetime
-                )
+                    StationData.create(
+                        station_id=station_id,
+                        air_temperature=item['air_temperature'],
+                        relative_humidity=item['relative_humidity'],
+                        rainfall=item['rainfall'],
+                        leaf_wetness_duration=item['leaf_wetness_duration'],
+                        measured_at=measured_datetime
+                    )
+                logger.info(f"All done.")
+            else:
+                logger.info(f"Station belong to the {env} environment, skipping.")
+        else:
+            logger.error(f"A problem occurred with the payload received : {msg.payload}")
 
 except Exception as e:
     logger.critical(f"An error appear : {e}")
