@@ -24,16 +24,27 @@ def get_database():
 def check_payload_validity(payload):
     try:
         field_required = ["air_temperature","relative_humidity","soil_moisture","rainfall","leaf_wetness_duration","timestamp"]
+        env_allowed = ["dev","test","prod"]
         json_payload = json.loads(payload.decode('utf-8').replace("'", '"'))
-        if not isinstance(json_payload, list) or len(json_payload) == 0:
+        env = json_payload['env']
+        data = json_payload['data']
+
+        if env not in env_allowed or len(data) == 0:
             return False
-        for item in json_payload:
+
+        for item in data:
             if not isinstance(item, dict):
                 return False
             for field in field_required:
                 if field not in item:
                     return False
-        return True
+        return {
+            'valid': True,
+            'env': env,
+            'data': data
+        }
     except Exception as e:
-        logger.error(f"Error appear while decoding the payload : {e}")
-        return False
+        return {
+            'valid': False,
+            'error': str(e)
+        }

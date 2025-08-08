@@ -8,7 +8,6 @@ db = get_database()
 class Station(Model):
     id = UUIDField(primary_key=True, null=False)
     name = CharField(null=True, default="CHANGE_IT")
-    env = CharField(null=True, default="DEV")
     last_update = DateTimeField(default=datetime.datetime.now)
     created_at = DateTimeField(default=datetime.datetime.now)
 
