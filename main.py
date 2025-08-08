@@ -1,5 +1,5 @@
 from models import Station, StationData
-from database import get_database
+from utils import get_database, check_payload_validity
 import os
 import json
 from dotenv import load_dotenv
@@ -7,50 +7,37 @@ import paho.mqtt.subscribe as subscribe
 from datetime import datetime
 from loguru import logger
 
-db = get_database()
 load_dotenv()
 
-if not os.getenv('DB_NAME'):
-    logger.error("Missing DB_NAME environment variable")
-    exit(1)
-if not os.getenv('DB_HOST'):
-    logger.error("Missing DB_HOST environment variable")
-    exit(1)
-if not os.getenv('DB_PORT'):
-    logger.error("Missing DB_PORT environment variable")
-    exit(1)
-if not os.getenv('DB_USER'):
-    logger.error("Missing DB_USER environment variable")
-    exit(1)
-if not os.getenv('DB_PSW'):
-    logger.error("Missing DB_PSW environment variable")
-    exit(1)
-if not os.getenv('BRK_HOST'):
-    logger.error("Missing BRK_HOST environment variable")
-    exit(1)
-if not os.getenv('BRK_PORT'):
-    logger.error("Missing BRK_PORT environment variable")
-    exit(1)
+logger.info("Starting script")
+#--------------------------------------------------------
+# Vérification de la présence des variables environements
+#--------------------------------------------------------
+required_env_vars = ['DB_NAME', 'DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PSW', 'BRK_HOST', 'BRK_PORT', 'BRK_USER','BRK_PSW','ENV']
 
-def get_station(station_id):
-    count = Station.select().where(Station.id == station_id).count()
+for var in required_env_vars:
+    if not os.getenv(var):
+        logger.error(f"Missing {var} environment variable")
+        exit(1)
 
-    if count > 0:
-        existing_station = Station.select().where(Station.id == station_id).get()
-        existing_station.last_update = datetime.datetime.now()
-        existing_station.save()
-        return existing_station
-    else:
-        new_station = Station.create(id=station_id)
-        return new_station
-
-if __name__ == '__main__':
-    logger.info("Starting script")
+#---------------------------------------------------------
+# Script principal
+#---------------------------------------------------------
+try :
+    #-----------------------------------------------------
+    # Connection à la base de donnée
+    #-----------------------------------------------------
+    logger.info("Trying to connect to database")
+    db = get_database()
     db.connect()
-    db.create_tables([Station, StationData])
-    logger.info("Successfully connected to database")
+    db.create_tables([Station, StationData]) # On créez les tables si elles n'existe pas
+    logger.info("Connected to database")
+
     while True:
-        logger.info("Waiting for stations datas.")
+        #--------------------------------------------------
+        # Connection au broker MQTT
+        #--------------------------------------------------
+        logger.info("Waiting for station data.")
         msg = subscribe.simple(
             topics="station/#",
             hostname=os.getenv('BRK_HOST'),
@@ -60,29 +47,41 @@ if __name__ == '__main__':
                 'password': os.getenv('BRK_PSW')
             }
         )
-
         topic_parts = msg.topic.split('/')
-        station_id = topic_parts[1] if len(topic_parts) > 1 else None
+        station_id = topic_parts[1]
 
-        if not station_id:
-            continue
+        #--------------------------------------------------
+        # Reception d'un nouveau message
+        #--------------------------------------------------
+        logger.info(f"New message received from station {station_id}")
+        station = Station.get_or_create(id=station_id)
 
-        station = get_station(station_id)
+        # --------------------------------------------------
+        # Récupération de la payload
+        # --------------------------------------------------
+        if check_payload_validity(msg.payload) and os.getenv('ENV') == station.env:
 
-        data_array = json.loads(msg.payload.decode('utf-8').replace("'", '"'))
+            data_array = json.loads(msg.payload.decode('utf-8').replace("'", '"'))
 
-        for data in data_array:
-            measured_datetime = datetime.fromtimestamp(data['timestamp'])
+            # --------------------------------------------------
+            # Enregistrement des métriques en bases
+            # --------------------------------------------------
+            for data in data_array:
+                measured_datetime = datetime.fromtimestamp(data['timestamp'])
 
-            # noinspection PyPackageRequirements
-            StationData.create(
-                station_id=station_id,
-                air_temperature=data['air_temperature'],
-                relative_humidity=data['relative_humidity'],
-                rainfall=data['rainfall'],
-                leaf_wetness_duration=data['leaf_wetness_duration'],
-                measured_at=measured_datetime
-            )
+                StationData.create(
+                    station_id=station_id,
+                    air_temperature=data['air_temperature'],
+                    relative_humidity=data['relative_humidity'],
+                    rainfall=data['rainfall'],
+                    leaf_wetness_duration=data['leaf_wetness_duration'],
+                    measured_at=measured_datetime
+                )
+
+except Exception as e:
+    logger.critical(f"An error appear : {e}")
+    exit(1)
+
 
 
 

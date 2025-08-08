@@ -1,5 +1,5 @@
 from peewee import *
-from database import get_database
+from utils import get_database
 import datetime
 import uuid
 
