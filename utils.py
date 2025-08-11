@@ -2,6 +2,7 @@ from peewee import *
 import os
 from dotenv import load_dotenv
 import json
+from datetime import datetime
 
 load_dotenv()
 
@@ -43,8 +44,25 @@ def check_payload_validity(payload):
 # -----------------------------------------------------------------------
 # Cette fonction permet de vérifier l'intégrité des métriques reçu
 # -----------------------------------------------------------------------
-def check_metrics(data):
+def check_metrics(param,data):
     try:
-        return {'valid': True, 'data': data}
+        try:
+            datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
+        except ValueError:
+            return {'valid': False, 'error': 'Invalid timestamp format'}
+
+        if not param.air_temperature_min <= data['air_temperature'] <= param.air_temperature_max:
+            return {'valid': False, 'error': f"Invalid air_temperature : {data['air_temperature']}"}
+
+        if not param.relative_humidity_min <= data['relative_humidity'] <= param.relative_humidity_max:
+            return {'valid': False, 'error': f"Invalid relative_humidity : {data['relative_humidity']}"}
+
+        if not param.rainfall_min <= data['rainfall'] <= param.rainfall_max:
+            return {'valid': False, 'error': f"Invalid rainfall : {data['rainfall']}"}
+
+        if not param.leaf_wetness_duration_min <= data['leaf_wetness_duration'] <= param.leaf_wetness_duration_max:
+            return {'valid': False, 'error': f"Invalid leaf_wetness_duration : {data['leaf_wetness_duration']}"}
+
+        return {'valid': True}
     except Exception as e:
         return {'valid': False, 'error': str(e)}

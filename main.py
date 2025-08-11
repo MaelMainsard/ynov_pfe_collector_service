@@ -1,4 +1,4 @@
-from models import Station, StationData
+from models import Station, StationData, StationParams
 from utils import get_database, check_payload_validity, check_metrics
 import os
 from dotenv import load_dotenv
@@ -12,7 +12,7 @@ logger.info("Starting script")
 #--------------------------------------------------------
 # Vérification de la présence des variables environements
 #--------------------------------------------------------
-required_env_vars = ['DB_NAME', 'DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PSW', 'BRK_HOST', 'BRK_PORT', 'BRK_USER','BRK_PSW','ENV']
+required_env_vars = ['DB_NAME', 'DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PSW', 'BRK_HOST', 'BRK_PORT', 'BRK_USER','BRK_PSW']
 
 for var in required_env_vars:
     if not os.getenv(var):
