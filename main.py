@@ -57,32 +57,29 @@ try :
         # --------------------------------------------------
         # Récupération de la payload
         # --------------------------------------------------
-        valid, env, data, error = check_payload_validity(msg.payload)
+        result = check_payload_validity(msg.payload)
 
-        if valid:
-            if env == os.getenv('ENV'):
-                logger.info(f"Saving station if not exist.")
-                station = Station.get_or_create(id=station_id)
-                # --------------------------------------------------
-                # Enregistrement des métriques en bases
-                # --------------------------------------------------
-                logger.info(f"Saving station data.")
-                for item in data:
-                    measured_datetime = datetime.fromtimestamp(item['timestamp'])
+        if result['valid']:
+            logger.info(f"Saving station if not exist.")
+            station = Station.get_or_create(id=station_id)
+            # --------------------------------------------------
+            # Enregistrement des métriques en bases
+            # --------------------------------------------------
+            logger.info(f"Saving station data.")
+            for item in result['data']:
+                measured_datetime = datetime.fromtimestamp(item['timestamp'])
 
-                    StationData.create(
-                        station_id=station_id,
-                        air_temperature=item['air_temperature'],
-                        relative_humidity=item['relative_humidity'],
-                        rainfall=item['rainfall'],
-                        leaf_wetness_duration=item['leaf_wetness_duration'],
-                        measured_at=measured_datetime
-                    )
-                logger.info(f"All done.")
-            else:
-                logger.info(f"Station belong to the {env} environment, skipping.")
+                StationData.create(
+                    station_id=station_id,
+                    air_temperature=item['air_temperature'],
+                    relative_humidity=item['relative_humidity'],
+                    rainfall=item['rainfall'],
+                    leaf_wetness_duration=item['leaf_wetness_duration'],
+                    measured_at=measured_datetime
+                )
+            logger.info(f"All done.")
         else:
-            logger.error(f"A problem occurred with the payload received : {msg.payload}")
+            logger.error(f"A problem occurred with the payload received : {msg.payload} => {result['error']}")
 
 except Exception as e:
     logger.critical(f"An error appear : {e}")
