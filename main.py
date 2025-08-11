@@ -1,58 +1,95 @@
 from models import Station, StationData
-from database import get_database
+from utils import get_database, check_payload_validity, check_metrics
 import os
-import json
 from dotenv import load_dotenv
 import paho.mqtt.subscribe as subscribe
 from datetime import datetime
 from loguru import logger
 
-db = get_database()
 load_dotenv()
 
-def get_station(station_id):
-    count = Station.select().where(Station.id == station_id).count()
+logger.info("Starting script")
+#--------------------------------------------------------
+# Vérification de la présence des variables environements
+#--------------------------------------------------------
+required_env_vars = ['DB_NAME', 'DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PSW', 'BRK_HOST', 'BRK_PORT', 'BRK_USER','BRK_PSW','ENV']
 
-    if count > 0:
-        existing_station = Station.select().where(Station.id == station_id).get()
-        existing_station.last_update = datetime.datetime.now()
-        existing_station.save()
-        return existing_station
-    else:
-        new_station = Station.create(id=station_id)
-        return new_station
+for var in required_env_vars:
+    if not os.getenv(var):
+        logger.error(f"Missing {var} environment variable")
+        exit(1)
 
-if __name__ == '__main__':
-    logger.info("Starting script")
+#---------------------------------------------------------
+# Script principal
+#---------------------------------------------------------
+try :
+    #-----------------------------------------------------
+    # Connection à la base de donnée
+    #-----------------------------------------------------
+    logger.info("Trying to connect to database")
+    db = get_database()
     db.connect()
-    db.create_tables([Station, StationData])
-    logger.info("Successfully connected to database")
+    db.create_tables([Station, StationData]) # On créez les tables si elles n'existe pas
+    logger.info("Connected to database")
+
     while True:
-        logger.info("Waiting for stations datas.")
-        msg = subscribe.simple(topics="station/#", hostname=os.getenv('BRK_HOST'), port=int(os.getenv('BRK_PORT')))
-
+        #--------------------------------------------------
+        # Connection au broker MQTT
+        #--------------------------------------------------
+        logger.info("Waiting for station data.")
+        msg = subscribe.simple(
+            topics="station/#",
+            hostname=os.getenv('BRK_HOST'),
+            port=int(os.getenv('BRK_PORT')),
+            auth={
+                'username': os.getenv('BRK_USER'),
+                'password': os.getenv('BRK_PSW')
+            }
+        )
         topic_parts = msg.topic.split('/')
-        station_id = topic_parts[1] if len(topic_parts) > 1 else None
+        station_id = topic_parts[1]
 
-        if not station_id:
-            continue
+        #--------------------------------------------------
+        # Reception d'un nouveau message
+        #--------------------------------------------------
+        logger.info(f"New message received from station {station_id}")
 
-        station = get_station(station_id)
+        # --------------------------------------------------
+        # Récupération de la payload
+        # --------------------------------------------------
+        result = check_payload_validity(msg.payload)
 
-        data_array = json.loads(msg.payload.decode('utf-8').replace("'", '"'))
+        if result['valid']:
+            logger.info(f"Saving station if not exist.")
+            station = Station.get_or_create(id=station_id)
+            # --------------------------------------------------
+            # Enregistrement des métriques en bases
+            # --------------------------------------------------
+            logger.info(f"Saving station data.")
+            for item in result['data']:
+                metrics = check_metrics(item)
 
-        for data in data_array:
-            measured_datetime = datetime.fromtimestamp(data['timestamp'])
+                if metrics['valid']:
+                    measured_datetime = datetime.fromtimestamp(item['timestamp'])
 
-            # noinspection PyPackageRequirements
-            StationData.create(
-                station_id=station_id,
-                air_temperature=data['air_temperature'],
-                relative_humidity=data['relative_humidity'],
-                rainfall=data['rainfall'],
-                leaf_wetness_duration=data['leaf_wetness_duration'],
-                measured_at=measured_datetime
-            )
+                    StationData.create(
+                        station_id=station_id,
+                        air_temperature=item['air_temperature'],
+                        relative_humidity=item['relative_humidity'],
+                        rainfall=item['rainfall'],
+                        leaf_wetness_duration=item['leaf_wetness_duration'],
+                        measured_at=measured_datetime
+                    )
+                else:
+                    logger.warning(f"Data was not saved. Cause : {metrics['error']}")
+            logger.info(f"All done.")
+        else:
+            logger.error(f"A problem occurred with the payload received : {msg.payload} => {result['error']}")
+
+except Exception as e:
+    logger.critical(f"An error appear : {e}")
+    exit(1)
+
 
 
 
