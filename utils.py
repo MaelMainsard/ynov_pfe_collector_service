@@ -5,9 +5,9 @@ import json
 
 load_dotenv()
 
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------
 # Cette fonction retourne l'object de connection à la base de donnée
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------
 def get_database():
     return PostgresqlDatabase(
         os.getenv('DB_NAME'),
@@ -17,9 +17,9 @@ def get_database():
         port=os.getenv('DB_PORT')
     )
 
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------
 # Cette fonction permet de vérifier la validitée de la payload de retour
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------
 def check_payload_validity(payload):
     try:
         field_required = ["air_temperature", "relative_humidity", "soil_moisture", "rainfall", "leaf_wetness_duration","timestamp"]
@@ -37,5 +37,14 @@ def check_payload_validity(payload):
 
         return {'valid': True, 'data': json_payload}
 
+    except Exception as e:
+        return {'valid': False, 'error': str(e)}
+
+# -----------------------------------------------------------------------
+# Cette fonction permet de vérifier l'intégrité des métriques reçu
+# -----------------------------------------------------------------------
+def check_metrics(data):
+    try:
+        return {'valid': True, 'data': data}
     except Exception as e:
         return {'valid': False, 'error': str(e)}

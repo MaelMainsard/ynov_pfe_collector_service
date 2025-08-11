@@ -1,5 +1,5 @@
 from models import Station, StationData
-from utils import get_database, check_payload_validity
+from utils import get_database, check_payload_validity, check_metrics
 import os
 from dotenv import load_dotenv
 import paho.mqtt.subscribe as subscribe
@@ -67,16 +67,21 @@ try :
             # --------------------------------------------------
             logger.info(f"Saving station data.")
             for item in result['data']:
-                measured_datetime = datetime.fromtimestamp(item['timestamp'])
+                metrics = check_metrics(item)
 
-                StationData.create(
-                    station_id=station_id,
-                    air_temperature=item['air_temperature'],
-                    relative_humidity=item['relative_humidity'],
-                    rainfall=item['rainfall'],
-                    leaf_wetness_duration=item['leaf_wetness_duration'],
-                    measured_at=measured_datetime
-                )
+                if metrics['valid']:
+                    measured_datetime = datetime.fromtimestamp(item['timestamp'])
+
+                    StationData.create(
+                        station_id=station_id,
+                        air_temperature=item['air_temperature'],
+                        relative_humidity=item['relative_humidity'],
+                        rainfall=item['rainfall'],
+                        leaf_wetness_duration=item['leaf_wetness_duration'],
+                        measured_at=measured_datetime
+                    )
+                else:
+                    logger.warning(f"Data was not saved. Cause : {metrics['error']}")
             logger.info(f"All done.")
         else:
             logger.error(f"A problem occurred with the payload received : {msg.payload} => {result['error']}")
