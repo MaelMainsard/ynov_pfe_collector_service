@@ -29,7 +29,7 @@ try :
     logger.info("Trying to connect to database")
     db = get_database()
     db.connect()
-    db.create_tables([Station, StationData]) # On créez les tables si elles n'existe pas
+    db.create_tables([Station, StationData, StationParams]) # On créez les tables si elles n'existe pas
     logger.info("Connected to database")
 
     while True:
@@ -66,8 +66,10 @@ try :
             # Enregistrement des métriques en bases
             # --------------------------------------------------
             logger.info(f"Saving station data.")
+            param = StationParams.get_or_create(station_id=station_id)
             for item in result['data']:
-                metrics = check_metrics(item)
+
+                metrics = check_metrics(param,item)
 
                 if metrics['valid']:
                     measured_datetime = datetime.fromtimestamp(item['timestamp'])
