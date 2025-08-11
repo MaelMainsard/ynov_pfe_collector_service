@@ -6,14 +6,3 @@ Faker~=37.4.0
 psycopg2-binary~=2.9.10
 pytest~=8.4.1
 loguru~=0.7.3
-
-DB_NAME="railway"
-DB_HOST="yamabiko.proxy.rlwy.net"
-DB_PORT="49798"
-DB_USER="postgres"
-DB_PSW="vnAzGhPoddVXwQDDvaQfIsZdrNCtPDKz"
-BRK_HOST="switchyard.proxy.rlwy.net"
-BRK_PORT="19828"
-BRK_USER="orange_mock"
-BRK_PSW="lyjb7oam5ismv4xxurb4sr0uhcmbjl9m"
-ENV="PROD"
