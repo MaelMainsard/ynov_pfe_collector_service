@@ -1,9 +1,11 @@
 from peewee import *
 import os
 from dotenv import load_dotenv
+from constant import Constant
 import json
 from datetime import datetime
 
+constant = Constant()
 load_dotenv()
 
 # -----------------------------------------------------------------------
@@ -27,14 +29,14 @@ def check_payload_validity(payload):
         json_payload = json.loads(payload.decode('utf-8').replace("'", '"'))
 
         if not isinstance(json_payload, list) or len(json_payload) == 0:
-            return {'valid': False, 'error': 'Invalid format or empty list'}
+            return {'valid': False, 'error': constant.WRONG_JSON_OR_EMPTY_LIST}
 
         for item in json_payload:
             if not isinstance(item, dict):
-                return {'valid': False, 'error': 'Items must be dictionaries'}
+                return {'valid': False, 'error': constant.ITEMS_NOT_DICT}
             for field in field_required:
                 if field not in item:
-                    return {'valid': False, 'error': f'Missing field: {field}'}
+                    return {'valid': False, 'error': f'{constant.MISSING_FIELD}: {field}'}
 
         return {'valid': True, 'data': json_payload}
 
@@ -49,19 +51,22 @@ def check_metrics(param,data):
         try:
             datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
         except ValueError:
-            return {'valid': False, 'error': 'Invalid timestamp format'}
+            return {'valid': False, 'error': f'{constant.INVALID_TIMESTAMP}: {data["timestamp"]}'}
 
-        if not param.air_temperature_min <= data['air_temperature'] <= param.air_temperature_max:
-            return {'valid': False, 'error': f"Invalid air_temperature : {data['air_temperature']}"}
+        if not param.air_temperature_min <= float(data['air_temperature']) <= param.air_temperature_max:
+            return {'valid': False, 'error': f"${constant.INVALID_AIR_TEMPERATURE} : {data['air_temperature']}"}
 
-        if not param.relative_humidity_min <= data['relative_humidity'] <= param.relative_humidity_max:
-            return {'valid': False, 'error': f"Invalid relative_humidity : {data['relative_humidity']}"}
+        if not param.relative_humidity_min <= float(data['relative_humidity']) <= param.relative_humidity_max:
+            return {'valid': False, 'error': f"${constant.INVALID_RELATIVE_HUMIDITY} : {data['relative_humidity']}"}
 
-        if not param.rainfall_min <= data['rainfall'] <= param.rainfall_max:
-            return {'valid': False, 'error': f"Invalid rainfall : {data['rainfall']}"}
+        if not param.soil_moisture_min <= float(data['soil_moisture']) <= param.soil_moisture_max:
+            return {'valid': False, 'error': f"${constant.INVALID_SOIL_MOISTURE} : {data['soil_moisture']}"}
 
-        if not param.leaf_wetness_duration_min <= data['leaf_wetness_duration'] <= param.leaf_wetness_duration_max:
-            return {'valid': False, 'error': f"Invalid leaf_wetness_duration : {data['leaf_wetness_duration']}"}
+        if not param.rainfall_min <= float(data['rainfall']) <= param.rainfall_max:
+            return {'valid': False, 'error': f"${constant.INVALID_RAINFALL} : {data['rainfall']}"}
+
+        if not param.leaf_wetness_duration_min <= float(data['leaf_wetness_duration']) <= param.leaf_wetness_duration_max:
+            return {'valid': False, 'error': f"${constant.INVALID_LEAF_WETNESS_DURATION} : {data['leaf_wetness_duration']}"}
 
         return {'valid': True}
     except Exception as e:
