@@ -1,44 +1,66 @@
 services:
-
   orange_mock:
     image: eclipse-mosquitto
     ports:
-      - "${BRK_PORT}:1883"
-    environment:
-      - MOSQUITTO_USERNAME=${BRK_USER}
-      - MOSQUITTO_PASSWORD=${BRK_PSW}
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
     restart: unless-stopped
     networks:
       - pfe_network
     healthcheck:
-      test: [ "CMD", "mosquitto_sub", "-t", "$SYS/broker/uptime", "-C", "1", "-u", "${BRK_USER}", "-P", "${BRK_PSW}" ]
+      test: [ "CMD", "mosquitto_pub", "-t", "test", "-m", "health" ]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
 
   postgres:
     image: postgres:16
     ports:
-      - ${DB_PORT}:5432
+      - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=${DB_PSW}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=simplepassword123
+      - POSTGRES_USER=local_user
+      - POSTGRES_DB=grape_db
     networks:
       - pfe_network
     depends_on:
-      - orange_mock
+       orange_mock:
+          condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      test: [ "CMD-SHELL", "pg_isready -U local_user -d grape_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 5s
+
+  collector_service:
+    build: .
+    environment:
+      - DB_NAME=grape_db
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=local_user
+      - DB_PSW=simplepassword123
+      - BRK_HOST=orange_mock
+      - BRK_PORT=1883
+      - BRK_USER=admin
+      - BRK_PSW=password123
+    networks:
+      - pfe_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 
 volumes:
   postgres_data:
+  mosquitto_data:
 
 networks:
   pfe_network:

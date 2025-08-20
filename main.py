@@ -1,4 +1,4 @@
-from models import Station, StationData, StationParams
+from models import Models
 from utils import get_database, check_payload_validity, check_metrics
 import os
 from dotenv import load_dotenv
@@ -28,8 +28,9 @@ try :
     #-----------------------------------------------------
     logger.info("Trying to connect to database")
     db = get_database()
+    models = Models(db)
     db.connect()
-    db.create_tables([Station, StationData, StationParams]) # On créez les tables si elles n'existe pas
+    db.create_tables([models.Station, models.StationData, models.StationParams]) # On créez les tables si elles n'existe pas
     logger.info("Connected to database")
 
     while True:
@@ -61,29 +62,32 @@ try :
 
         if result['valid']:
             logger.info(f"Saving station if not exist.")
-            station = Station.get_or_create(id=station_id)
+            station, created = models.Station.get_or_create(id=station_id)
             # --------------------------------------------------
             # Enregistrement des métriques en bases
             # --------------------------------------------------
-            logger.info(f"Saving station data.")
-            param = StationParams.get_or_create(station_id=station_id)
+            logger.info(f"Saving station params.")
+            param, created = models.StationParams.get_or_create(station_id=station_id)
+
+            logger.info(f"Saving station metrics.")
             for item in result['data']:
 
                 metrics = check_metrics(param,item)
 
                 if metrics['valid']:
-                    measured_datetime = datetime.fromtimestamp(item['timestamp'])
+                    measured_datetime = datetime.fromisoformat(item['timestamp'])
 
-                    StationData.create(
+                    models.StationData.create(
                         station_id=station_id,
-                        air_temperature=item['air_temperature'],
-                        relative_humidity=item['relative_humidity'],
-                        rainfall=item['rainfall'],
-                        leaf_wetness_duration=item['leaf_wetness_duration'],
+                        air_temperature=float(item['air_temperature']),
+                        relative_humidity=float(item['relative_humidity']),
+                        soil_moisture=float(item['soil_moisture']),
+                        rainfall=float(item['rainfall']),
+                        leaf_wetness_duration=float(item['leaf_wetness_duration']),
                         measured_at=measured_datetime
                     )
                 else:
-                    logger.warning(f"Data was not saved. Cause : {metrics['error']}")
+                    logger.warning(f"Metric was not saved. Cause : {metrics['error']}")
             logger.info(f"All done.")
         else:
             logger.error(f"A problem occurred with the payload received : {msg.payload} => {result['error']}")

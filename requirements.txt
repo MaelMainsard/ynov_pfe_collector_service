@@ -8,3 +8,5 @@ pytest~=8.4.1
 loguru~=0.7.3
 pylint~=3.3.8
 pytest-benchmark~=5.1.0
+click~=8.2.1
+testcontainers~=4.12.0

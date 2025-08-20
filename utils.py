@@ -53,19 +53,19 @@ def check_metrics(param,data):
         except ValueError:
             return {'valid': False, 'error': f'{constant.INVALID_TIMESTAMP}: {data["timestamp"]}'}
 
-        if not param.air_temperature_min <= data['air_temperature'] <= param.air_temperature_max:
+        if not param.air_temperature_min <= float(data['air_temperature']) <= param.air_temperature_max:
             return {'valid': False, 'error': f"${constant.INVALID_AIR_TEMPERATURE} : {data['air_temperature']}"}
 
-        if not param.relative_humidity_min <= data['relative_humidity'] <= param.relative_humidity_max:
+        if not param.relative_humidity_min <= float(data['relative_humidity']) <= param.relative_humidity_max:
             return {'valid': False, 'error': f"${constant.INVALID_RELATIVE_HUMIDITY} : {data['relative_humidity']}"}
 
-        if not param.soil_moisture_min <= data['soil_moisture'] <= param.soil_moisture_max:
+        if not param.soil_moisture_min <= float(data['soil_moisture']) <= param.soil_moisture_max:
             return {'valid': False, 'error': f"${constant.INVALID_SOIL_MOISTURE} : {data['soil_moisture']}"}
 
-        if not param.rainfall_min <= data['rainfall'] <= param.rainfall_max:
+        if not param.rainfall_min <= float(data['rainfall']) <= param.rainfall_max:
             return {'valid': False, 'error': f"${constant.INVALID_RAINFALL} : {data['rainfall']}"}
 
-        if not param.leaf_wetness_duration_min <= data['leaf_wetness_duration'] <= param.leaf_wetness_duration_max:
+        if not param.leaf_wetness_duration_min <= float(data['leaf_wetness_duration']) <= param.leaf_wetness_duration_max:
             return {'valid': False, 'error': f"${constant.INVALID_LEAF_WETNESS_DURATION} : {data['leaf_wetness_duration']}"}
 
         return {'valid': True}
