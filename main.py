@@ -1,3 +1,5 @@
+import sys
+
 from models import Models
 from utils import get_database, check_payload_validity, check_metrics
 import os
@@ -7,6 +9,10 @@ from datetime import datetime
 from loguru import logger
 
 load_dotenv()
+
+logger.remove()
+
+logger.add(sys.stdout, level="DEBUG")
 
 logger.info("Starting script")
 #--------------------------------------------------------
