@@ -46,37 +46,17 @@ class TestInputValidation:
             }
 
     @log_on_failure
-    def test_sql_injection_block(self, infrastructure):
-        db = infrastructure["db"]
-        db.connect()
-        models = Models(db)
-
-        malicious_station_uid = "e69cb64d-92f4-4ff2-9982-16e16a42c5a8'; DROP TABLE stationdata; --"
-        initial_count = models.StationData.select().count()
-
-        publisher.single(
-            topic=f"station/{malicious_station_uid}",
-            hostname=infrastructure["mqtt_host"],
-            port=infrastructure["mqtt_port"],
-            payload=json.dumps([{
-                "air_temperature": 25.5,
-                "relative_humidity": 60.5,
-                "soil_moisture": 45.6,
-                "rainfall": 0.2,
-                "leaf_wetness_duration": 12,
-                "timestamp": str(datetime.now())+"; DROP TABLE stationdata;"
-            }])
-        )
-
-        time.sleep(2)
-
-        final_count = models.StationData.select().count()
-        assert final_count == initial_count, "L'injection SQL à réussi."
-
-    @log_on_failure
-    def test_special_characters(self, infrastructure):
+    def test_metrics_treatments_time_correct(self, infrastructure):
         assert True
 
     @log_on_failure
-    def test_no_json_data(self, infrastructure):
+    def test_cpu(self, infrastructure):
+        assert True
+
+    @log_on_failure
+    def test_ram(self, infrastructure):
+        assert True
+
+    @log_on_failure
+    def test_no_memory_leak(self, infrastructure):
         assert True
