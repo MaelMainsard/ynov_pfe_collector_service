@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from constant import Constant
 import json
 from datetime import datetime
+from mailjet_rest import Client
 
 constant = Constant()
 load_dotenv()
@@ -48,26 +49,74 @@ def check_payload_validity(payload):
 # -----------------------------------------------------------------------
 def check_metrics(param,data):
     try:
+        errors_array = []
         try:
             datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
         except ValueError:
-            return {'valid': False, 'error': f'{constant.INVALID_TIMESTAMP}: {data["timestamp"]}'}
+            errors_array.append({'field': 'timestamp', 'value': data['timestamp']})
 
         if not param.air_temperature_min <= float(data['air_temperature']) <= param.air_temperature_max:
-            return {'valid': False, 'error': f"${constant.INVALID_AIR_TEMPERATURE} : {data['air_temperature']}"}
+            errors_array.append({'field': 'air_temperature', 'value': data['air_temperature']})
 
         if not param.relative_humidity_min <= float(data['relative_humidity']) <= param.relative_humidity_max:
-            return {'valid': False, 'error': f"${constant.INVALID_RELATIVE_HUMIDITY} : {data['relative_humidity']}"}
+            errors_array.append({'field': 'relative_humidity', 'value': data['relative_humidity']})
 
         if not param.soil_moisture_min <= float(data['soil_moisture']) <= param.soil_moisture_max:
-            return {'valid': False, 'error': f"${constant.INVALID_SOIL_MOISTURE} : {data['soil_moisture']}"}
+            errors_array.append({'field': 'soil_moisture', 'value': data['soil_moisture']})
 
         if not param.rainfall_min <= float(data['rainfall']) <= param.rainfall_max:
-            return {'valid': False, 'error': f"${constant.INVALID_RAINFALL} : {data['rainfall']}"}
+            errors_array.append({'field': 'rainfall', 'value': data['rainfall']})
 
         if not param.leaf_wetness_duration_min <= float(data['leaf_wetness_duration']) <= param.leaf_wetness_duration_max:
-            return {'valid': False, 'error': f"${constant.INVALID_LEAF_WETNESS_DURATION} : {data['leaf_wetness_duration']}"}
+            errors_array.append({'field': 'leaf_wetness_duration', 'value': data['leaf_wetness_duration']})
 
-        return {'valid': True}
+        if len(errors_array) > 0:
+            return {'valid': False, 'errors': errors_array}
+        else:
+            return {'valid': True}
+
     except Exception as e:
         return {'valid': False, 'error': str(e)}
+
+# -----------------------------------------------------------------------
+# Cette fonction permet d'envoyer un email d'alerte
+# -----------------------------------------------------------------------
+def send_alert_email(station_name,threshold_limit,aberrant_metrics):
+    try:
+        mailjet = Client(
+            auth=(
+                os.getenv('MJ_APIKEY_PUBLIC'),
+                os.getenv('MJ_APIKEY_PRIVATE')
+            ),
+            version='v3.1'
+        )
+
+        data = {
+            'Messages': [
+                {
+                    "From": {
+                        "Email": os.getenv('ALERTING_EMAIL'),
+                    },
+                    "To": [
+                        {
+                            "Email": os.getenv('ALERTING_EMAIL'),
+                        }
+                    ],
+                    "TemplateID": 7307492,
+                    "TemplateLanguage": True,
+                    "Variables": {
+                        "STATION" : station_name,
+                        "THRESHOLD": threshold_limit,
+                        "ABERRANT_VALUES": aberrant_metrics
+                    }
+                }
+            ]
+        }
+        result = mailjet.send.create(data=data)
+        if result.status_code == 200:
+            return {'success': True}
+        else:
+            return {'success': False, 'error': result.json()}
+
+    except Exception as e:
+        return {'success': False, 'error': str(e)}

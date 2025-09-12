@@ -27,11 +27,11 @@ cp .env.local .env
 
 ```bash
 # Linux/macOS
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Windows
-python -m venv venv
+python -m venv .venv
 venv\Scripts\activate
 ```
 
@@ -80,7 +80,7 @@ python3 mock-station.py send-from-json \
   --station_uid=0c1eedf6-78b5-4e5e-b60b-49e87951a942
 
 # Test avec une donnée simple
-python3 mock-station.py send_prompt_data \
+python3 mock-station.py send-prompt-data \
   --station_uid=e69cb64d-92f4-4ff2-9982-16e16a42c5a8 \
   --air_temperature=25.5 \
   --relative_humidity=60 \

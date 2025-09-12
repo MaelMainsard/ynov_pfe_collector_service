@@ -41,6 +41,16 @@ class Models:
             rainfall_max = FloatField(default=500.0)
             leaf_wetness_duration_min = FloatField(default=0)
             leaf_wetness_duration_max = FloatField(default=24)
+            aberrant_metric_threshold = IntegerField(default=10)
+
+            class Meta:
+                database = db
+
+        class AberrantMetric(Model):
+            id = UUIDField(primary_key=True, default=uuid.uuid4)
+            station = ForeignKeyField(Station, backref='aberrant_station')
+            aberrant_metrics = CharField(null=False)
+            received_at = DateTimeField(null=False)
 
             class Meta:
                 database = db
@@ -48,3 +58,4 @@ class Models:
         self.Station = Station
         self.StationData = StationData
         self.StationParams = StationParams
+        self.AberrantMetric = AberrantMetric
