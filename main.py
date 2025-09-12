@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime
+from dateutil import parser
 from models import Models
 from utils import get_database, check_payload_validity, check_metrics, send_alert_email
 import os
@@ -59,8 +60,6 @@ try :
         topic_parts = msg.topic.split('/')
         station_id = topic_parts[1]
 
-        logger.info(f"New message received from station {station_id}")
-
         # --------------------------------------------------
         # Récupération + validation de la payload
         # --------------------------------------------------
@@ -73,10 +72,10 @@ try :
             # --------------------------------------------------
 
             station, created = models.Station.get_or_create(id=station_id)
+            logger.info(f"New message received from station {station.name}")
+            logger.info(f"Station uid {station.id}")
             if created:
                 logger.info(f"Station saved.")
-
-            logger.info(f"Station name : {station.name}")
 
             # ---------------------------------------------------------
             # Enregistrement des paramêtres de la station si necessaire
@@ -88,7 +87,8 @@ try :
             # ---------------------------------------------------------
             # Pour chacune des métriques reçues
             # ---------------------------------------------------------
-
+            metrics_count = len(result['data'])
+            logger.info(f"Saving station metrics ({metrics_count}).")
             for item in result['data']:
 
                 # ---------------------------------------------------------
@@ -98,8 +98,7 @@ try :
                 metrics = check_metrics(param,item)
 
                 if metrics['valid']:
-                    logger.info(f"Saving station metrics.")
-                    measured_datetime = datetime.fromisoformat(item['timestamp'])
+                    measured_datetime = parser.isoparse(item['timestamp'])
 
                     models.StationData.create(
                         station_id=station_id,
