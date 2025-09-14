@@ -1,3 +1,5 @@
+# Documentation technique PFE
+
 ####  Prérequis système
 
 - Docker `v28.3.3+`
@@ -74,18 +76,18 @@ Vous pouvez facilement simuler l'envoi de données de station en utilisant le CL
 ```bash
 cd test
 
-# Test avec fichier JSON
-python3 mock-station.py send-from-json \
-  --json_file=test/ressources/fake_data.json \
-  --station_uid=0c1eedf6-78b5-4e5e-b60b-49e87951a942
+# Test avec des données mockés
+python3 test/mock-station.py create-mock-data --station_uid=69919589-d657-4ba2-8657-ee9f28963afe --nbr=100
+# Ou nbr est le nombre de données souhaité
 
 # Test avec une donnée simple
-python3 mock-station.py send-prompt-data \
-  --station_uid=e69cb64d-92f4-4ff2-9982-16e16a42c5a8 \
+python3 test/mock-station.py send-prompt-data \
+  --station_uid=69919589-d657-4ba2-8657-ee9f28963afe \
   --air_temperature=25.5 \
   --relative_humidity=60 \
   --soil_moisture=45 \
   --rainfall=0.2 \
+  --solar_irradiance=1200 \
   --leaf_wetness_duration=12
 ```
 

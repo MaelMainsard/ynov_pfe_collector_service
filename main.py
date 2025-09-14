@@ -106,6 +106,7 @@ try :
                         relative_humidity=float(item['relative_humidity']),
                         soil_moisture=float(item['soil_moisture']),
                         rainfall=float(item['rainfall']),
+                        solar_irradiance=float(item['solar_irradiance']),
                         leaf_wetness_duration=float(item['leaf_wetness_duration']),
                         measured_at=measured_datetime
                     )
