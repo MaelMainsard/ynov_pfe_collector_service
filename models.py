@@ -22,6 +22,7 @@ class Models:
             relative_humidity = FloatField(null=False)
             soil_moisture = FloatField(null=False)
             rainfall = FloatField(null=False)
+            solar_irradiance = FloatField(null=False)
             leaf_wetness_duration = FloatField(null=False)
             measured_at = DateTimeField(null=False)
 
@@ -39,6 +40,8 @@ class Models:
             soil_moisture_max = FloatField(default=100)
             rainfall_min = FloatField(default=0.0)
             rainfall_max = FloatField(default=500.0)
+            solar_irradiance_min = FloatField(default=0)
+            solar_irradiance_max = FloatField(default=1361)
             leaf_wetness_duration_min = FloatField(default=0)
             leaf_wetness_duration_max = FloatField(default=24)
             aberrant_metric_threshold = IntegerField(default=10)

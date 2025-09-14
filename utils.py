@@ -26,7 +26,7 @@ def get_database():
 # -----------------------------------------------------------------------
 def check_payload_validity(payload):
     try:
-        field_required = ["air_temperature", "relative_humidity", "soil_moisture", "rainfall", "leaf_wetness_duration","timestamp"]
+        field_required = ["air_temperature", "relative_humidity", "soil_moisture", "rainfall", "solar_irradiance", "leaf_wetness_duration","timestamp"]
         json_payload = json.loads(payload.decode('utf-8').replace("'", '"'))
 
         if not isinstance(json_payload, list) or len(json_payload) == 0:
@@ -66,6 +66,9 @@ def check_metrics(param,data):
 
         if not param.rainfall_min <= float(data['rainfall']) <= param.rainfall_max:
             errors_array.append({'field': 'rainfall', 'value': data['rainfall']})
+
+        if not param.solar_irradiance_min <= float(data['solar_irradiance']) <= param.solar_irradiance_max:
+            errors_array.append({'field': 'solar_irradiance','value': data['solar_irradiance']})
 
         if not param.leaf_wetness_duration_min <= float(data['leaf_wetness_duration']) <= param.leaf_wetness_duration_max:
             errors_array.append({'field': 'leaf_wetness_duration', 'value': data['leaf_wetness_duration']})
